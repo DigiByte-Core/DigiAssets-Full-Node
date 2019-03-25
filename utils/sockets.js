@@ -1,5 +1,5 @@
 
-var channels = ['newblock', 'newtransaction', 'newcctransaction', 'info']
+var channels = ['newblock', 'newtransaction', 'newdatransaction', 'info']
 
 module.exports = function (args) {
 

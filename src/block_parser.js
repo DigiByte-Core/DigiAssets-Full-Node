@@ -1,12 +1,12 @@
 var async = require('async')
-var CCTransaction = require('cc-transaction')
-var getAssetsOutputs = require('cc-get-assets-outputs')
+var DATransaction = require('digiasset-transaction')
+var getAssetsOutputs = require('digiasset-get-assets-outputs')
 var bitcoinjs = require('bitcoinjs-lib')
 var bufferReverse = require('buffer-reverse')
 var _ = require('lodash')
 var toposort = require('toposort')
 var redisClient = require('redis')
-var bitcoinRpc = require('bitcoin-async')
+var digibyteRpc = require('bitcoin-async')
 var events = require('events')
 
 var mainnetFirstColoredBlock = 364548
@@ -18,40 +18,40 @@ var blockStates = {
   FORKED: 2
 }
 
-var label = 'cc-full-node'
+var label = 'da-full-node'
 
 module.exports = function (args) {
   args = args || {}
   var network = args.network || 'testnet'
-  var bitcoinNetwork = (network === 'mainnet') ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet
+  var digibyteNetwork = (network === 'mainnet') ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet
   var redisOptions = {
     host: args.redisHost || 'localhost',
     port: args.redisPort || '6379',
-    prefix: 'ccfullnode:' + network + ':'
+    prefix: 'dafullnode:' + network + ':'
   }
   var redis = redisClient.createClient(redisOptions)
 
-  var bitcoinOptions = {
-    host: args.bitcoinHost || 'localhost',
-    port: args.bitcoinPort || '18332',
-    user: args.bitcoinUser || 'rpcuser',
-    pass: args.bitcoinPass || 'rpcpass',
-    path: args.bitcoinPath || '/',
-    timeout: args.bitcoinTimeout || 30000
+  var digibyteOptions = {
+    host: args.digibyteHost || 'localhost',
+    port: args.digibytePort || '18332',
+    user: args.digibyteUser || 'rpcuser',
+    pass: args.digibytePass || 'rpcpass',
+    path: args.digibytePath || '/',
+    timeout: args.digibyteTimeout || 30000
   }
-  var bitcoin = new bitcoinRpc.Client(bitcoinOptions)
+  var digibyte = new digibyteRpc.Client(digibyteOptions)
 
   var emitter = new events.EventEmitter()
 
   var info = {
-    bitcoindbusy: true
+    digibytedbusy: true
   }
 
-  var waitForBitcoind = function (cb) {
-    if (!info.bitcoindbusy) return cb()
+  var waitForDigiByted = function (cb) {
+    if (!info.digibytedbusy) return cb()
     return setTimeout(function() {
-      console.log('Waiting for bitcoind...')
-      bitcoin.cmd('getinfo', [], function (err) {
+      console.log('Waiting for digibyte...')
+      digibyte.cmd('getinfo', [], function (err) {
         if (err) {
           info.error = {}
           if (err.code) {
@@ -63,10 +63,10 @@ module.exports = function (args) {
           if (!err.code && !err.message) {
             info.error = err
           }
-          return waitForBitcoind(cb)
+          return waitForDigiByted(cb)
         }
         delete info.error
-        info.bitcoindbusy = false
+        info.digibytedbusy = false
         cb()
       })
     }, 5000)
@@ -82,14 +82,14 @@ module.exports = function (args) {
   }
 
   var getNextBlock = function (height, cb) {
-    bitcoin.cmd('getblockhash', [height], function (err, hash) {
+    digibyte.cmd('getblockhash', [height], function (err, hash) {
       if (err) {
         if (err.code && err.code === -8) {
           return cb(null, null)
         }
         return cb(err)
       }
-      bitcoin.cmd('getblock', [hash, false], function (err, rawBlock) {
+      digibyte.cmd('getblock', [hash, false], function (err, rawBlock) {
         if (err) return cb(err)
         var block = bitcoinjs.Block.fromHex(rawBlock)
         block.height = height
@@ -132,7 +132,7 @@ module.exports = function (args) {
 
   var checkVersion = function (hex) {
     var version = hex.toString('hex').substring(0, 4)
-    return (version.toLowerCase() === '4343')
+    return (version.toLowerCase() === '4441')
   }
 
   var getColoredData = function (transaction) {
@@ -142,9 +142,9 @@ module.exports = function (args) {
       var hex = vout.scriptPubKey.asm.substring('OP_RETURN '.length)
       if (checkVersion(hex)) {
         try {
-          coloredData = CCTransaction.fromHex(hex).toJson()
+          coloredData = DATransaction.fromHex(hex).toJson()
         } catch (e) {
-          console.log('Invalid CC transaction.')
+          console.log('Invalid DA transaction.')
         }
       }
       return coloredData
@@ -160,7 +160,7 @@ module.exports = function (args) {
     })
 
     var prevOutsBatch = prevTxs.map(function(vin) { return { 'method': 'getrawtransaction', 'params': [vin.txid] } })
-    bitcoin.cmd(prevOutsBatch, function (rawTransaction, cb) {
+    digibyte.cmd(prevOutsBatch, function (rawTransaction, cb) {
       var prevTx = decodeRawTransaction(bitcoinjs.Transaction.fromHex(rawTransaction))
       var txid = prevTx.id
       prevTxs.forEach(function(vin) {
@@ -211,7 +211,7 @@ module.exports = function (args) {
           utxosChanges.unused[transaction.txid + ':' + outputIndex] = JSON.stringify(assets)
         }
       })
-      emitter.emit('newcctransaction', transaction)
+      emitter.emit('newdatransaction', transaction)
       emitter.emit('newtransaction', transaction)
       cb()
     })
@@ -300,24 +300,24 @@ module.exports = function (args) {
         var type = bitcoinjs.script.classifyOutput(txout.script)
         var addresses = []
         if (~['pubkeyhash', 'scripthash'].indexOf(type)) {
-          addresses.push(bitcoinjs.address.fromOutputScript(bitcoinjs.script.decompile(txout.script), bitcoinNetwork))
+          addresses.push(bitcoinjs.address.fromOutputScript(bitcoinjs.script.decompile(txout.script), digibyteNetwork))
         }
         var answer = {'value' : value, 'n': i, 'scriptPubKey': {'asm': asm, 'hex': hex, 'addresses': addresses, 'type': type}}
 
         r['vout'].push(answer)
     })
 
-    var ccdata = getColoredData(r)
-    if (ccdata) {
-      r['ccdata'] = [ccdata]
+    var dadata = getColoredData(r)
+    if (dadata) {
+      r['dadata'] = [dadata]
       r['colored'] = true
     }
     return r
   }
 
   var parseNewBlock = function (block, cb) {
-    info.cctimestamp = block.timestamp
-    info.ccheight = block.height
+    info.datimestamp = block.timestamp
+    info.daheight = block.height
     var utxosChanges = {
       used: {},
       unused: {},
@@ -330,7 +330,7 @@ module.exports = function (args) {
         emitter.emit('newtransaction', transaction)
         return process.nextTick(cb)
       }
-      transaction.ccdata = [coloredData]
+      transaction.dadata = [coloredData]
       parseTransaction(transaction, utxosChanges, block.height, cb)
     }, function (err) {
       if (err) return cb(err)
@@ -344,7 +344,7 @@ module.exports = function (args) {
   }
 
   var getMempoolTxids = function (cb) {
-    bitcoin.cmd('getrawmempool', [], cb)
+    digibyte.cmd('getrawmempool', [], cb)
   }
 
   var getNewMempoolTxids = function (mempoolTxids, cb) {
@@ -362,7 +362,7 @@ module.exports = function (args) {
       return { method: 'getrawtransaction', params: [txid, 0]}
     })
     var newMempoolTransactions = []
-    bitcoin.cmd(commandsArr, function (rawTransaction, cb) {
+    digibyte.cmd(commandsArr, function (rawTransaction, cb) {
       var newMempoolTransaction = decodeRawTransaction(bitcoinjs.Transaction.fromHex(rawTransaction))
       newMempoolTransactions.push(newMempoolTransaction)
       cb()
@@ -403,7 +403,7 @@ module.exports = function (args) {
         emitter.emit('newtransaction', newMempoolTransaction)
         return process.nextTick(cb)
       }
-      newMempoolTransaction.ccdata = [coloredData]
+      newMempoolTransaction.dadata = [coloredData]
       parseTransaction(newMempoolTransaction, utxosChanges, -1, function (err) {
         if (err) return cb(err)
         updateMempoolTransactionUtxosChanges(newMempoolTransaction.txid, utxosChanges, cb)
@@ -415,14 +415,14 @@ module.exports = function (args) {
   }
 
   var updateInfo = function (cb) {
-    if (info.ccheight && info.cctimestamp) {
+    if (info.daheight && info.datimestamp) {
       return process.nextTick(cb)
     }
     redis.hmget('blocks', 'lastBlockHeight', 'lastTimestamp', function (err, arr) {
       if (err) return cb(err)
       if (!arr || arr.length < 2) return process.nextTick(cb)
-      info.ccheight = arr[0]
-      info.cctimestamp = arr[1]
+      info.daheight = arr[0]
+      info.datimestamp = arr[1]
       cb()
     })
   }
@@ -474,15 +474,15 @@ module.exports = function (args) {
             params: [address, label, false]
           }
         })
-        bitcoin.cmd(commandsArr, function (ans, cb) { return process.nextTick(cb)}, cb)
+        digibyte.cmd(commandsArr, function (ans, cb) { return process.nextTick(cb)}, cb)
       },
       function (cb) {
         reindex = false
         if (!newAddresses.length) return process.nextTick(cb)
         reindex = true
-        info.bitcoindbusy = true
-        bitcoin.cmd('importaddress', [newAddresses[0], label, true], function (err) {
-          waitForBitcoind(cb)
+        info.digibytedbusy = true
+        digibyte.cmd('importaddress', [newAddresses[0], label, true], function (err) {
+          waitForDigiByted(cb)
         })
         endFunc()
       },
@@ -516,7 +516,7 @@ module.exports = function (args) {
   }
 
   var infoPopulate = function (cb) {
-    getBitcoindInfo(function (err, newInfo) {
+    getDigiBytedInfo(function (err, newInfo) {
       if (err) return cb(err)
       info = newInfo
       cb()
@@ -525,7 +525,7 @@ module.exports = function (args) {
 
   var parseProcedure = function () {
     async.waterfall([
-      waitForBitcoind,
+      waitForDigiByted,
       infoPopulate,
       getNextBlockHeight,
       getNextBlock,
@@ -537,9 +537,9 @@ module.exports = function (args) {
   var getAddressesUtxos = function (args, cb) {
     var addresses = args.addresses
     var numOfConfirmations = args.numOfConfirmations || 0
-    bitcoin.cmd('getblockcount', [], function(err, count) {
+    digibyte.cmd('getblockcount', [], function(err, count) {
       if (err) return cb(err)
-      bitcoin.cmd('listunspent', [numOfConfirmations, 99999999, addresses], function (err, utxos) {
+      digibyte.cmd('listunspent', [numOfConfirmations, 99999999, addresses], function (err, utxos) {
         if (err) return cb(err)
         async.each(utxos, function (utxo, cb) {
           redis.hget('utxos', utxo.txid + ':' + utxo.vout, function (err, assets) {
@@ -563,9 +563,9 @@ module.exports = function (args) {
   var getUtxos = function (args, cb) {
     var reqUtxos = args.utxos
     var numOfConfirmations = args.numOfConfirmations || 0
-    bitcoin.cmd('getblockcount', [], function(err, count) {
+    digibyte.cmd('getblockcount', [], function(err, count) {
       if (err) return cb(err)
-      bitcoin.cmd('listunspent', [numOfConfirmations, 99999999], function (err, utxos) {
+      digibyte.cmd('listunspent', [numOfConfirmations, 99999999], function (err, utxos) {
         if (err) return cb(err)
         utxos = utxos.filter(utxo => reqUtxos.findIndex(reqUtxo => reqUtxo.txid === utxo.txid && reqUtxo.index === utxo.vout) !== -1)
         async.each(utxos, function (utxo, cb) {
@@ -589,7 +589,7 @@ module.exports = function (args) {
 
   var transmit = function (args, cb) {
     var txHex = args.txHex
-    bitcoin.cmd('sendrawtransaction', [txHex], function(err, res) {
+    digibyte.cmd('sendrawtransaction', [txHex], function(err, res) {
       if (err) {
         return cb(err)
       }
@@ -610,7 +610,7 @@ module.exports = function (args) {
             if (err) return callback(err)
             if (txids.length == 0) return callback()
             var batch = txids.map(function(txid) { return { 'method': 'getrawtransaction', 'params': [txid] } })
-            bitcoin.cmd(
+            digibyte.cmd(
               batch,
               function (rawTransaction, cb) {
                 var tx = decodeRawTransaction(bitcoinjs.Transaction.fromHex(rawTransaction))
@@ -684,7 +684,7 @@ module.exports = function (args) {
     var transactions = {}
 
     async.whilst(function () { return next }, function (cb) {
-      bitcoin.cmd('listtransactions', [label, count, skip, true], function (err, transactions) {
+      digibyte.cmd('listtransactions', [label, count, skip, true], function (err, transactions) {
         if (err) return cb(err)
         skip+=count
         transactions.forEach(function (transaction) {
@@ -701,9 +701,9 @@ module.exports = function (args) {
     }, function (err) {
       if (err) return cb(err)
       var batch = txids.map(function(txid) { return { 'method': 'getrawtransaction', 'params': [txid] } })
-      bitcoin.cmd('getblockcount', [], function(err, count) {
+      digibyte.cmd('getblockcount', [], function(err, count) {
         if (err) return cb(err)
-        bitcoin.cmd(batch, function (rawTransaction, cb) {
+        digibyte.cmd(batch, function (rawTransaction, cb) {
           var transaction = decodeRawTransaction(bitcoinjs.Transaction.fromHex(rawTransaction))
           var tx = txs[transaction.txid]
           addColoredIOs(transaction, function(err) {
@@ -731,7 +731,7 @@ module.exports = function (args) {
           })
 
           var prevOutsBatch = Object.keys(prevOutputIndex).map(function(txid) { return { 'method': 'getrawtransaction', 'params': [txid] } })
-          bitcoin.cmd(prevOutsBatch, function (rawTransaction, cb) {
+          digibyte.cmd(prevOutsBatch, function (rawTransaction, cb) {
             var transaction = decodeRawTransaction(bitcoinjs.Transaction.fromHex(rawTransaction))
             var txid = transaction.id
             prevOutputIndex[transaction.txid].forEach(function(vin) {
@@ -755,11 +755,11 @@ module.exports = function (args) {
     })
   }
 
-  var getBitcoindInfo = function (cb) {
+  var getDigiBytedInfo = function (cb) {
     var btcInfo
     async.waterfall([
       function (cb) {
-        bitcoin.cmd('getinfo', [], cb)
+        digibyte.cmd('getblockchaininfo', [], cb)
       },
       function (_btcInfo, cb) {
         if (typeof _btcInfo === 'function') {
@@ -768,17 +768,17 @@ module.exports = function (args) {
         }
         if (!_btcInfo) return cb('No reply from getinfo')
         btcInfo = _btcInfo
-        bitcoin.cmd('getblockhash', [btcInfo.blocks], cb)
+        digibyte.cmd('getblockhash', [btcInfo.blocks], cb)
       },
       function (lastBlockHash, cb) {
-        bitcoin.cmd('getblock', [lastBlockHash], cb)
+        digibyte.cmd('getblock', [lastBlockHash], cb)
       }
     ],
     function (err, lastBlockInfo) {
       if (err) return cb(err)
       btcInfo.timestamp = lastBlockInfo.time
-      btcInfo.cctimestamp = info.cctimestamp
-      btcInfo.ccheight = info.ccheight
+      btcInfo.datimestamp = info.datimestamp
+      btcInfo.daheight = info.daheight
       cb(null, btcInfo)
     })
   }
@@ -796,8 +796,8 @@ module.exports = function (args) {
     cb(null, ans)
   }
 
-  var proxyBitcoinD = function (method, params, cb) {
-    bitcoin.cmd(method, params, function (err, ans) {
+  var proxyDigiByteD = function (method, params, cb) {
+    digibyte.cmd(method, params, function (err, ans) {
       if (err) return cb(err)
       injectColoredUtxos(method, params, ans, cb)
     })
@@ -811,7 +811,7 @@ module.exports = function (args) {
     getAddressesTransactions: getAddressesTransactions,
     transmit: transmit,
     getInfo: getInfo,
-    proxyBitcoinD: proxyBitcoinD,
+    proxyDigiByteD: proxyDigiByteD,
     emitter: emitter
   }
 }

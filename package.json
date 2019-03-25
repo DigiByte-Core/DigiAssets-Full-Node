@@ -1,25 +1,25 @@
 {
-  "name": "coloredcoins-full-node",
-  "ProductName": "ColoredCoins Full Node",
-  "version": "0.1.6",
-  "description": "ColoredCoins Full Node",
+  "name": "digiassets-full-node",
+  "ProductName": "DigiAssets Full Node",
+  "version": "0.2.0",
+  "description": "DigiAssets Full Node",
   "main": "src/server.js",
   "scripts": {
     "start": "node ./src/server.js",
     "package-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/coloredcoins.icns --prune=true --ignore=dependencies --ignore=dist --out=dist",
-    "package-win": "electron-packager . --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/coloredcoins.ico --prune=true --ignore=dependencies --ignore=dist --out=dist --version-string.CompanyName=ColoredCoins.org --version-string.FileDescription=coloredcoins-full-node --version-string.ProductName=\"ColoredCoins Full Node\"",
+    "package-win": "electron-packager . --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/coloredcoins.ico --prune=true --ignore=dependencies --ignore=dist --out=dist --version-string.CompanyName=DigiByte.io --version-string.FileDescription=digiassets-full-node --version-string.ProductName=\"DigiAssets Full Node\"",
     "package-winstaller": "node ./installer-scripts/package-winstaller.js",
     "package-linux": "electron-packager . --overwrite --platform=linux --arch=x64 --icon=assets/coloredcoins.png --prune=true --ignore=dependencies --ignore=dist --out=dist"
   },
   "keywords": [
-    "Colored",
-    "coins",
-    "full",
-    "node"
+    "digiassets",
+    "digibyte",
+    "blockchain",
+    "smart contract"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Colored-Coins/Full-Node.git"
+    "url": "https://github.com/Digibyte-Core/DigiAssets-Full-Node.git"
   },
   "license": "Apache-2.0",
   "author": "Tal Beja",
@@ -29,9 +29,10 @@
     "bitcoin-async": "^1.0.0",
     "bitcoinjs-lib": "3.0.2",
     "body-parser": "^1.17.1",
-    "cc-get-assets-outputs": "^1.2.0",
-    "cc-transaction": "^1.2.0",
     "cors": "^2.8.3",
+    "digiasset-get-assets-outputs": "^1.3.0",
+    "digiasset-transaction": "^1.3.0",
+    "download": "^7.1.0",
     "express": "^4.15.2",
     "iniparser": "^1.0.5",
     "level": "^1.6.0",

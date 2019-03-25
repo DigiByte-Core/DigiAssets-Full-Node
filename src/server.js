@@ -10,7 +10,7 @@ var ospath = require('ospath')
 var socketio = require('socket.io')
 var cors = require('cors')
 
-var propertiesFilePath = path.join(ospath.data(), 'coloredcoins-full-node', 'properties.conf')
+var propertiesFilePath = path.join(ospath.data(), 'digiassets-full-node', 'properties.conf')
 var config = require(path.join(__dirname, '/../utils/config.js'))(propertiesFilePath)
 var parser = require(path.join(__dirname, '/../src/block_parser.js'))(config)
 var router = require(path.join(__dirname, '/../router/router.js'))

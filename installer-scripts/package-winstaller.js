@@ -43,9 +43,9 @@ function packageWindowsInstaller (bits, callback) {
   console.log('Packaging windows installer ' + bits + 'bit ...')
   async.waterfall([
     function (cb) {
-      console.log('  downloading Bitcoin-Core ' + bits + 'bit setup...')
-      download('https://bitcoin.org/bin/bitcoin-core-0.14.1/bitcoin-0.14.1-win' + bits + '-setup.exe', DEPENDENCIES_PATH).then(() => {
-        console.log('  done downloading Bitcoin-Core setup.')
+      console.log('  downloading DigiByte-Core ' + bits + 'bit setup...')
+      download('https://github.com/digibyte/digibyte/releases/download/v6.17.2/digibyte-6.17.2-win' + bits + '-setup.exe', DEPENDENCIES_PATH).then(() => {
+        console.log('  done downloading DigiByte-Core setup.')
         cb()
       })
     },
