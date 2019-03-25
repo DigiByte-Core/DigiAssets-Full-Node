@@ -51,7 +51,7 @@ module.exports = function (args) {
     if (!info.digibytedbusy) return cb()
     return setTimeout(function() {
       console.log('Waiting for digibyte...')
-      digibyte.cmd('getinfo', [], function (err) {
+      digibyte.cmd('getblockchaininfo', [], function (err) {
         if (err) {
           info.error = {}
           if (err.code) {
