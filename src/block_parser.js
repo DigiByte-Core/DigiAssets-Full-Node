@@ -9,8 +9,8 @@ var redisClient = require('redis')
 var digibyteRpc = require('bitcoin-async')
 var events = require('events')
 
-var mainnetFirstColoredBlock = 364548
-var testnetFirstColoredBlock = 462320
+var mainnetFirstColoredBlock = 8420000
+var testnetFirstColoredBlock = 8420000
 
 var blockStates = {
   NOT_EXISTS: 0,
@@ -76,7 +76,7 @@ module.exports = function (args) {
     redis.hget('blocks', 'lastBlockHeight', function (err, lastBlockHeight) {
       if (err) return cb(err)
       lastBlockHeight = lastBlockHeight || ((network === 'mainnet' ? mainnetFirstColoredBlock : testnetFirstColoredBlock) - 1)
-      lastBlockHeight = parseInt(lastBlockHeight)
+      lastBlockHeight = parseInt(lastBlockHeight);
       cb(null, lastBlockHeight + 1)
     })
   }
@@ -415,10 +415,12 @@ module.exports = function (args) {
   }
 
   var updateInfo = function (cb) {
+    //console.log(info.daheight && info.datimestamp, info.daheight, info.datimestamp)
     if (info.daheight && info.datimestamp) {
       return process.nextTick(cb)
     }
     redis.hmget('blocks', 'lastBlockHeight', 'lastTimestamp', function (err, arr) {
+      //console.log(err, arr);
       if (err) return cb(err)
       if (!arr || arr.length < 2) return process.nextTick(cb)
       info.daheight = arr[0]
