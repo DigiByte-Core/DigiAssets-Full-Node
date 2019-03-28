@@ -1,7 +1,7 @@
 {
   "name": "digiassets-full-node",
   "ProductName": "DigiAssets Full Node",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "DigiAssets Full Node",
   "main": "src/server.js",
   "scripts": {
