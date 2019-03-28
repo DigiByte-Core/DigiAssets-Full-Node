@@ -10,7 +10,7 @@ var digibyteRpc = require('bitcoin-async')
 var events = require('events')
 
 var mainnetFirstColoredBlock = 8420000
-var testnetFirstColoredBlock = 8420000
+var testnetFirstColoredBlock = 10000
 
 var blockStates = {
   NOT_EXISTS: 0,
