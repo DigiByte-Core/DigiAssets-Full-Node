@@ -17,7 +17,7 @@ var tryPopulateDigiByteConfAuto = function (properties) {
   // console.log('bitcoindProperties', bitcoindProperties)
   // properties.network = (bitcoindProperties.testnet === '1' || bitcoindProperties === 'true') ? 'testnet' : 'mainnet'
   properties.digibyteHost = 'localhost'
-  properties.digibytePort = digibytedProperties.rpcport || (properties.network === 'testnet' ? '18332' : '14022')
+  properties.digibytePort = digibytedProperties.rpcport || (properties.network === 'testnet' ? '14023' : '14022')
   properties.digibyteUser = digibytedProperties.rpcuser || 'rpcuser'
   properties.digibytePass = digibytedProperties.rpcpassword || 'rpcpass'
   properties.digibytePath = '/'
