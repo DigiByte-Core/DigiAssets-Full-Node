@@ -203,7 +203,7 @@ module.exports = function (propertiesFile) {
   if (!digibytedAutoConfSuccess) {
     properties.network = properties.network || process.env.NETWORK || 'testnet'
     properties.digibyteHost = properties.digibyteHost || process.env.DIGIBYTED_HOST || 'localhost'
-    properties.digibytePort = properties.digibytePort || process.env.DIGIBYTED_PORT || '18332'
+    properties.digibytePort = properties.digibytePort || process.env.DIGIBYTED_PORT || '14023'
     properties.digibyteUser = properties.digibyteUser || process.env.DIGIBYTED_USER || 'rpcuser'
     properties.digibytePass = properties.digibytePass || process.env.DIGIBYTED_PASS || 'rpcpass'
     properties.digibytePath = properties.digibytePath || process.env.DIGIBYTED_PATH || '/'
