@@ -33,7 +33,7 @@ module.exports = function (args) {
 
   var digibyteOptions = {
     host: args.digibyteHost || 'localhost',
-    port: args.digibytePort || '18332',
+    port: args.digibytePort || '14023',
     user: args.digibyteUser || 'rpcuser',
     pass: args.digibytePass || 'rpcpass',
     path: args.digibytePath || '/',
