@@ -9,7 +9,7 @@ var redisClient = require('redis')
 var digibyteRpc = require('bitcoin-async')
 var events = require('events')
 
-var mainnetFirstColoredBlock = 8420000
+var mainnetFirstColoredBlock = 8571709
 var testnetFirstColoredBlock = 10000
 
 var blockStates = {
